@@ -6,7 +6,7 @@ defmodule Server do
 
 def start config, server_num, multipaxos, monitor do
   IO.puts "          Starting server #{server_num} at #{DAC.node_ip_addr}"
-  config   = Map.put config, :server_num, server_num  
+  config   = Map.put config, :server_num, server_num
 
   database = spawn Database, :start, [config, monitor]
   replica  = spawn Replica,  :start, [config, database, monitor]
@@ -14,8 +14,7 @@ def start config, server_num, multipaxos, monitor do
   acceptor = spawn Acceptor, :start, [config]
 
   send multipaxos, { :config, replica, acceptor, leader }
-  
+
 end # start
 
 end # Server
-

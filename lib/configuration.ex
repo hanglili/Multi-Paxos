@@ -4,8 +4,8 @@
 
 defmodule Configuration do
 
-def version :default do	
-  %{ 
+def version :default do
+  %{
   debug_level:  0, 		# debug level 0
   docker_delay: 1_000,		# time (ms) to wait for containers to start up
 
@@ -19,14 +19,14 @@ def version :default do
 
   print_after:  1_000,		# print transaction log summary every print_after msecs
 
-  crash_server: %{},  
+  crash_server: %{},
 
   }
 end
 
 # -----------------------------------------------------------------------------
 
-def version :faster do	 
+def version :faster do
   config = version :default	# settings for faster throughput and flow-control
   # settings omitted
 end
@@ -41,10 +41,8 @@ end
 # -----------------------------------------------------------------------------
 
 def version :crashes do		# settings for crashing servers
-  config = version :default 
+  config = version :default
   # settings omitted
-  }
 end
 
 end # module ----------------------------------------------------------------
-

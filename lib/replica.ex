@@ -32,7 +32,7 @@ defmodule Replica do
        not Enum.empty?(state.requests) do
 
       state = if not Map.has_key?(state.decisions, state.slot_in) do
-        { c, requests } = List.pop_at(state.requests, -1)
+        { c, requests } = List.pop_at(state.requests, 0)
         proposals = Map.put(state.proposals, state.slot_in, c)
         for leader <- state.leaders do
           send leader, { :propose, state.slot_in, c }
@@ -68,12 +68,10 @@ defmodule Replica do
     receive do
       { :client_request, command } ->
         # first element is most recently added
-        # IO.puts "<r.0> with #{inspect state}"
         send state.monitor, { :client_request, state.config.server_num }
         %{state | requests: [command | state.requests] }
 
       { :decision, slot, command } ->
-        # IO.puts "<r.1> with #{inspect state}"
         execute_commands(%{ state | decisions: Map.put(state.decisions, slot, command) })
 
     end

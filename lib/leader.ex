@@ -25,9 +25,7 @@ defmodule Leader do
         end
 
       { :adopted, ballot_num, pvalues } ->
-        # IO.puts "<l.2> with proposals #{inspect proposals} and pvalues #{inspect pvalues}"
         proposals = update_proposals(proposals, pmax(pvalues))
-        # IO.puts "<l.3> with proposals #{inspect proposals}"
         for { s, c } <- proposals do
           spawn(Commander, :start, [self(), acceptors, replicas, { ballot_num, s, c }])
         end
@@ -36,7 +34,7 @@ defmodule Leader do
       { :preempted, { round_num, leader_id } = another_ballot_num } ->
         if (another_ballot_num > ballot_num) do
           ballot_num = { round_num + 1, leader_id }
-          Process.sleep(Enum.random 100 .. 1000)
+          Process.sleep(:rand.uniform(10) * 100)
           spawn(Scout, :start, [self(), acceptors, ballot_num])
           next(acceptors, replicas, ballot_num, false, proposals)
         else
@@ -47,11 +45,12 @@ defmodule Leader do
 
   defp get_c_with_max_b(s_pvalues) do
     Enum.reduce(s_pvalues, { -1, -1 }, fn({ b, _, c }), { max_b, max_c } ->
-      if (max_b < b) do
-        { b, c }
-      else
-        { max_b, max_c }
-      end
+      max({ max_b, max_c }, { b, c })
+      # if (max_b < b) do
+      #   { b, c }
+      # else
+      #   { max_b, max_c }
+      # end
     end)
   end
 

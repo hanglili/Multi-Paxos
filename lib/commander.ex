@@ -6,7 +6,7 @@ defmodule Commander do
     for acceptor <- acceptors do
       send acceptor, { :p2a, self(), pvalue }
     end
-    next(leader, pvalue, acceptors, acceptors, replicas)
+    next(leader, pvalue, MapSet.new(acceptors), acceptors, replicas)
   end
 
   defp next(leader, { b, s, c } = pvalue, waitfor, acceptors, replicas) do
@@ -16,7 +16,7 @@ defmodule Commander do
         IO.puts "<c.2>"
         if (acceptor_b == b) do
           waitfor = MapSet.delete(waitfor, acceptor)
-          if (MapSet.size(waitfor) < (MapSet.size(acceptors) / 2)) do
+          if (MapSet.size(waitfor) < (length(acceptors) / 2)) do
             for replica <- replicas do
               IO.puts "<c.3>"
               send replica, { :decision, s, c }

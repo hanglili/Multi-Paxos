@@ -13,7 +13,8 @@ defmodule Acceptor do
         send leader, { :p1b, self(), ballot_num, accepted }
         next(ballot_num, accepted)
 
-      { :p2a, leader, pvalue }->
+      { :p2a, leader, pvalue } ->
+        IO.puts "<a.3>"
         accepted = update_accepted(accepted, ballot_num, pvalue)
         send leader, { :p2b, self(), ballot_num }
         next(ballot_num, accepted)

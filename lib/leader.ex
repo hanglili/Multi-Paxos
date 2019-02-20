@@ -14,7 +14,7 @@ defmodule Leader do
   defp next(acceptors, replicas, ballot_num, active, proposals) do
     receive do
       { :propose, slot, command } ->
-        if Map.has_key?(proposals, slot) do
+        if not Map.has_key?(proposals, slot) do
           proposals = Map.put(proposals, slot, command)
           if active do
             spawn(Commander, :start, [self(), acceptors, replicas, { ballot_num, slot, command }])
@@ -25,8 +25,9 @@ defmodule Leader do
         end
 
       { :adopted, ballot_num, pvalues } ->
-        IO.puts "<l.2>"
+        IO.puts "<l.2> with proposals #{inspect proposals} and pvalues #{inspect pvalues}"
         proposals = update_proposals(proposals, pmax(pvalues))
+        IO.puts "<l.3> with proposals #{inspect proposals}"
         for { s, c } <- proposals do
           spawn(Commander, :start, [self(), acceptors, replicas, { ballot_num, s, c }])
         end

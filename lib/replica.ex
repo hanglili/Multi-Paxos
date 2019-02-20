@@ -37,6 +37,8 @@ defmodule Replica do
           send leader, { :propose, state.slot_in, c }
         end
         %{ state | requests: requests, proposals: proposals }
+      else
+        state
       end
     else
       state

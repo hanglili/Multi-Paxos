@@ -6,7 +6,7 @@ defmodule Scout do
     for acceptor <- acceptors do
       send acceptor, { :p1a, self(), b }
     end
-    next(leader, b, acceptors, acceptors, MapSet.new())
+    next(leader, b, MapSet.new(acceptors), acceptors, MapSet.new())
   end
 
   defp next(leader, b, waitfor, acceptors, pvalues) do
@@ -17,9 +17,9 @@ defmodule Scout do
         if (acceptor_b == b) do
           IO.puts "<s.3>"
           pvalues = MapSet.union(pvalues, acceptor_pvalues)
-          IO.puts "<s.2> with #{inspect waitfor} #{inspect acceptor}"
+          IO.puts "<s.2> with #{inspect acceptor_pvalues}"
           waitfor = MapSet.delete(waitfor, acceptor)
-          if (MapSet.size(waitfor) < (MapSet.size(acceptors) / 2)) do
+          if (MapSet.size(waitfor) < (length(acceptors) / 2)) do
             IO.puts "<s.4>"
             send leader, { :adopted, b, pvalues }
             Process.exit(self(), "Finished its function")

@@ -17,29 +17,32 @@ defmodule Replica do
   def start(config, database, monitor) do
     receive do
       { :bind, leaders } ->
-        state = %ReplicaState{
+        %ReplicaState{
           config: config,
           database: database,
           monitor: monitor,
           leaders: leaders
         }
-        next(state)
+        |> next
     end
   end
 
   defp propose(state) do
     if (state.slot_in < state.slot_out + state.config.window) &&
        not Enum.empty?(state.requests) do
-      if not Map.has_key?(state.decisions, state.slot_in) do
+
+      state = if not Map.has_key?(state.decisions, state.slot_in) do
         { c, requests } = List.pop_at(state.requests, -1)
         proposals = Map.put(state.proposals, state.slot_in, c)
         for leader <- state.leaders do
           send leader, { :propose, state.slot_in, c }
         end
-        %{ state | requests: requests, proposals: proposals }
+        state = %{ state | requests: requests, proposals: proposals }
       else
         state
       end
+
+      next(%{ state | slot_in: state.slot_in + 1 })
     else
       state
     end
@@ -65,11 +68,12 @@ defmodule Replica do
     receive do
       { :client_request, command } ->
         # first element is most recently added
+        # IO.puts "<r.0> with #{inspect state}"
         send state.monitor, { :client_request, state.config.server_num }
         %{state | requests: [command | state.requests] }
 
       { :decision, slot, command } ->
-        IO.puts "<0>"
+        # IO.puts "<r.1> with #{inspect state}"
         execute_commands(%{ state | decisions: Map.put(state.decisions, slot, command) })
 
     end

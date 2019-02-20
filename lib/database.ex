@@ -12,7 +12,6 @@ defp next config, monitor, db_seqnum, balances do
   DAC.debug config, "D"
   receive do
   { :execute, transaction } ->
-    IO.puts "Db"
     { :move, amount, account1, account2 } = transaction
 
     balance1 = Map.get balances, account1, 0

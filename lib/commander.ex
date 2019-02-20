@@ -10,15 +10,15 @@ defmodule Commander do
   end
 
   defp next(leader, { b, s, c } = pvalue, waitfor, acceptors, replicas) do
-    IO.puts "<c.1>"
+    # IO.puts "<c.1>"
     receive do
       { :p2b, acceptor, acceptor_b } ->
-        IO.puts "<c.2>"
+        # IO.puts "<c.2>"
         if (acceptor_b == b) do
           waitfor = MapSet.delete(waitfor, acceptor)
           if (MapSet.size(waitfor) < (length(acceptors) / 2)) do
             for replica <- replicas do
-              IO.puts "<c.3>"
+              # IO.puts "<c.3>"
               send replica, { :decision, s, c }
             end
             Process.exit(self(), "Finished its function")

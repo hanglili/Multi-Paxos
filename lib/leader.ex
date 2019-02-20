@@ -25,9 +25,9 @@ defmodule Leader do
         end
 
       { :adopted, ballot_num, pvalues } ->
-        IO.puts "<l.2> with proposals #{inspect proposals} and pvalues #{inspect pvalues}"
+        # IO.puts "<l.2> with proposals #{inspect proposals} and pvalues #{inspect pvalues}"
         proposals = update_proposals(proposals, pmax(pvalues))
-        IO.puts "<l.3> with proposals #{inspect proposals}"
+        # IO.puts "<l.3> with proposals #{inspect proposals}"
         for { s, c } <- proposals do
           spawn(Commander, :start, [self(), acceptors, replicas, { ballot_num, s, c }])
         end

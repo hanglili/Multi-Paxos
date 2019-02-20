@@ -9,7 +9,7 @@ def start config, client_num, replicas do
   Process.send_after self(), :client_stop, config.client_stop
   quorum =
     case config.client_send do
-      :round_robin -> 1  
+      :round_robin -> 1
       :broadcast   -> config.n_servers
       :quorum      -> div config.n_servers + 1, 2
     end
@@ -18,7 +18,7 @@ end # start
 
 defp next config, client_num, replicas, sent, quorum do
   # Setting client_sleep to 0 may overload the system
-  # with lots of requests and lots of spawned rocesses. 
+  # with lots of requests and lots of spawned rocesses.
 
   receive do
   :client_stop ->
@@ -47,15 +47,14 @@ defp next config, client_num, replicas, sent, quorum do
   end
 end # next
 
-    
+
 """
 defp handle_reply do  # discards all replies received
   receive do
   { :reply, _cid, _result } -> handle_reply()
   after 0 -> true
   end # receive
-end # handle_reply 
+end # handle_reply
 """
 
 end # Client
-

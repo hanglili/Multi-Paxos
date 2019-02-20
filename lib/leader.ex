@@ -5,17 +5,17 @@ defmodule Leader do
   def start(config) do
     receive do
       { :bind, acceptors, replicas } ->
-        spawn(Scout, :start, [self(), acceptors, 0])
+        spawn(Scout, :start, [self(), acceptors, { 0, config.server_num} ])
         next(acceptors, replicas, { 0, Map.get(config, :server_num) },
-             false, MapSet.new())
+             false, Map.new())
     end
   end
 
   defp next(acceptors, replicas, ballot_num, active, proposals) do
     receive do
       { :propose, slot, command } ->
-        if slot_is_in_proposals(slot, proposals) do
-          proposals = MapSet.put(proposals, { slot, command })
+        if Map.has_key?(proposals, slot) do
+          proposals = Map.put(proposals, slot, command)
           if active do
             spawn(Commander, :start, [self(), acceptors, replicas, { ballot_num, slot, command }])
           end
@@ -25,6 +25,7 @@ defmodule Leader do
         end
 
       { :adopted, ballot_num, pvalues } ->
+        IO.puts "<l.2>"
         proposals = update_proposals(proposals, pmax(pvalues))
         for { s, c } <- proposals do
           spawn(Commander, :start, [self(), acceptors, replicas, { ballot_num, s, c }])
@@ -42,12 +43,6 @@ defmodule Leader do
       end
   end
 
-  defp slot_is_in_proposals(slot, proposals) do
-    Enum.reduce(proposals, false, fn({ s, _ }), acc ->
-      acc || (s == slot)
-    end)
-  end
-
   defp get_c_with_max_b(s_pvalues) do
     Enum.reduce(s_pvalues, { -1, -1 }, fn({ b, _, c }), { max_b, max_c } ->
       if (max_b < b) do
@@ -59,22 +54,15 @@ defmodule Leader do
   end
 
   defp pmax(pvalues) do
-    split_pvalues = Enum.group_by(pvalues, fn({ b, s, c }) -> s end)
-    Enum.reduce(split_pvalues, MapSet.new(), fn({ s, s_pvalues }), acc ->
-      { _, c_with_max_b } = get_c_with_max_b(s_pvalues)
-      Enum.put(acc, { s, c_with_max_b })
-    end)
+    Enum.group_by(pvalues, fn({ b, s, c }) -> s end)
+    |> Enum.reduce(Map.new(), fn({ s, s_pvalues }), acc ->
+       { _, c_with_max_b } = get_c_with_max_b(s_pvalues)
+       Map.put(acc, s, c_with_max_b)
+       end)
   end
 
-  defp update_proposals(proposals, max_pvalues) do
-    MapSet.union(max_pvalues, Enum.reduce(proposals, MapSet.new(), fn({ s, c }), acc ->
-      if (not slot_is_in_proposals(s, proposals)) do
-        MapSet.put(acc, { s, c })
-      else
-        acc
-      end
-    end)
-    )
+  defp update_proposals(proposals, max_proposals) do
+    Map.merge(proposals, max_proposals)
   end
 
 end

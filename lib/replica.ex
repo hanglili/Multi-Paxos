@@ -2,44 +2,95 @@
 
 defmodule Replica do
 
+  defmodule ReplicaState do
+    defstruct config: Map.new,
+              database: nil,
+              monitor: nil,
+              leaders: [],
+              slot_in: 1,
+              slot_out: 1,
+              requests: [],
+              proposals: Map.new(),
+              decisions: Map.new()
+  end
+
   def start(config, database, monitor) do
     receive do
       { :bind, leaders } ->
-        next(leaders, database, 1, 1, MapSet.new(), MapSet.new(), MapSet.new())
+        state = %ReplicaState{
+          config: config,
+          database: database,
+          monitor: monitor,
+          leaders: leaders
+        }
+        next(state)
     end
   end
 
-  defp propose() do
-
+  defp propose(state) do
+    if (state.slot_in < state.slot_out + state.config.window) &&
+       not Enum.empty?(state.requests) do
+      if not Map.has_key?(state.decisions, state.slot_in) do
+        { c, requests } = List.pop_at(state.requests, -1)
+        proposals = Map.put(state.proposals, state.slot_in, c)
+        for leader <- state.leaders do
+          send leader, { :propose, state.slot_in, c }
+        end
+        %{ state | requests: requests, proposals: proposals }
+      end
+    else
+      state
+    end
   end
 
-  defp perform() do
-
+  defp perform(state, { client, request_id, transaction } = command) do
+    if has_already_executed(state.slot_out, command, state.decisions) do
+      state.slot_out + 1
+    else
+      send state.database, { :execute, transaction }
+      send client, { :response, request_id, :completed }
+      state.slot_out + 1
+    end
   end
 
-  defp next(leaders, database, slot_in, slot_out, requests, proposals, decisions) do
+  defp has_already_executed(slot_out, command, decisions) do
+    Enum.reduce(decisions, false, fn({ s, c }), acc ->
+      acc || (c == command && s < slot_out)
+    end)
+  end
+
+  defp next(state) do
     receive do
-      { :request, command } ->
-        requests = MapSet.put(requests, command)
-        propose()
-        next(leaders, database, slot_in, slot_out, requests, proposals, decisions)
+      { :client_request, command } ->
+        # first element is most recently added
+        send state.monitor, { :client_request, state.config.server_num }
+        %{state | requests: [command | state.requests] }
 
       { :decision, slot, command } ->
-        decisions = MapSet.put(decisions, { slot, command })
-        for { _, c } <- get_slots(slot_out, decisions) do
+        IO.puts "<0>"
+        execute_commands(%{ state | decisions: Map.put(state.decisions, slot, command) })
 
-
-        end
-        propose()
-        next(leaders, database, slot_in, slot_out, requests, proposals, decisions)
-
-      end
+    end
+    |> propose
+    |> next
   end
 
-  defp get_slots(slot, proposals) do
-    Enum.reduce(proposals, false, fn({ s, _ }), acc ->
-      acc || (s == slot)
-    end)
+  defp execute_commands(state) do
+    if not Map.has_key?(state.decisions, state.slot_out) do
+      state
+    else
+      decision_c = Map.get(state.decisions, state.slot_out)
+      { proposal_c, proposals } = Map.pop(state.proposals, state.slot_out)
+
+      state = if (proposal_c != nil) && (proposal_c != decision_c) do
+        %{ state | requests: [proposal_c | state.requests], proposals: proposals }
+      else
+        %{ state | proposals: proposals }
+      end
+
+      %{ state | slot_out: perform(state, decision_c) }
+      |> execute_commands
+    end
   end
 
 end

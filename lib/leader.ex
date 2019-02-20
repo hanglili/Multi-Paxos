@@ -36,6 +36,7 @@ defmodule Leader do
       { :preempted, { round_num, leader_id } = another_ballot_num } ->
         if (another_ballot_num > ballot_num) do
           ballot_num = { round_num + 1, leader_id }
+          Process.sleep(Enum.random 100 .. 1000)
           spawn(Scout, :start, [self(), acceptors, ballot_num])
           next(acceptors, replicas, ballot_num, false, proposals)
         else

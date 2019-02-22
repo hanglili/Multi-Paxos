@@ -1,8 +1,9 @@
 # Hang Li Li (hl4716)
 
 defmodule Acceptor do
-  
-  def start(config) do
+
+  def start(_) do
+    # {-1, -1} is used to denote the initial smallest ballot number
     next({-1, -1}, MapSet.new())
   end
 

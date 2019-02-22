@@ -44,21 +44,21 @@ defmodule Client do
         if sent == config.max_requests, do: send(self(), :client_stop)
 
         # receive do { :reply, _cid, _result } -> :ok end
-        # handle_reply()  # uncomment if replies are implemented
+        handle_reply()  # uncomment if replies are implemented
         next(config, client_num, replicas, sent, quorum)
     end
   end
 
   # next
 
-  """
+
   defp handle_reply do  # discards all replies received
     receive do
     { :reply, _cid, _result } -> handle_reply()
     after 0 -> true
     end # receive
   end # handle_reply
-  """
+
 end
 
 # Client

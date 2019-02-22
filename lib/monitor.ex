@@ -74,6 +74,7 @@ defp next config, clock, requests, updates, transactions, scouts, commanders do
     if config.debug_level == 1 do
       min_done = updates |> Map.values |> Enum.min
       n_requests = requests |> Map.values |> Enum.sum
+      # n_requests = requests |> Map.values |> List.first
       IO.puts "time = #{clock}    total seen = #{n_requests} max lag = #{n_requests-min_done}"
 
       sorted = scouts |> Map.to_list |> List.keysort(0)

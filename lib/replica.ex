@@ -43,20 +43,19 @@ defmodule Replica do
           state
         end
 
-      next(%{state | slot_in: state.slot_in + 1})
+      propose(%{state | slot_in: state.slot_in + 1})
     else
       state
     end
   end
 
   defp perform(state, {client, request_id, transaction} = command) do
-    if has_already_executed(state.slot_out, command, state.decisions) do
-      state.slot_out + 1
-    else
+    if !has_already_executed(state.slot_out, command, state.decisions) do
       send(state.database, {:execute, transaction})
-      send(client, {:response, request_id, :completed})
-      state.slot_out + 1
+      # IO.puts "Hello #{inspect command}"
+      send(client, {:reply, request_id, :completed})
     end
+    state.slot_out + 1
   end
 
   defp has_already_executed(slot_out, command, decisions) do

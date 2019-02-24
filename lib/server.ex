@@ -1,7 +1,8 @@
+# Hang Li Li (hl4716)
+
 # distributed algorithms, n.dulay 11 feb 19
 # coursework 2, paxos made moderately complex
 
-# Hang Li Li (hl4716)
 
 defmodule Server do
 

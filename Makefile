@@ -1,7 +1,7 @@
 
 # distributed algorithms, n.dulay, 11 feb 19
 # coursework 2, paxos made moderately complex
-# Makefile, v3 
+# Makefile, v3
 
 CONFIG  = default
 
@@ -16,15 +16,15 @@ DOCKER_SETUP = docker
 
 PROJECT      = da347
 NETWORK      = $(PROJECT)_network
- 
+
 # run all clients, servers and main component in a single node
 SINGLE	 = mix run --no-halt -e $(MAIN) $(CONFIG) $(SINGLE_SETUP) \
-       	   $(SERVERS) $(CLIENTS) 
+       	   $(SERVERS) $(CLIENTS)
 
 # run each client, server and main component in its own docker container
 DOCKER   = docker-compose -p $(PROJECT)
 GEN_YML	 = ./gen_yml.sh $(MAIN) $(CONFIG) $(DOCKER_SETUP) $(SERVERS) \
-           $(CLIENTS) 
+           $(CLIENTS)
 
 # non-docker compile and run
 compile:
@@ -51,15 +51,15 @@ drun dockerrun:
 gen:
 	$(GEN_YML)
 
-up:	
+up:
 	@make gen
-	$(DOCKER) up 
+	$(DOCKER) up
 
 down:
 	$(DOCKER) down
 	make show
 
-kill:  
+kill:
 	docker rm -f `docker ps -a -q`
 	docker network rm $(NETWORK)
 
@@ -68,13 +68,13 @@ show:
 	@echo ----------------------
 	@make ps
 	@echo ----------------------
-	@make network 
+	@make network
 
 show2:
 	@echo ----------------------
 	@make ps2
 	@echo ----------------------
-	@make network 
+	@make network
 
 ps:
 	docker ps -a --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
@@ -89,8 +89,6 @@ inspect:
 	docker network inspect $(NETWORK)
 
 netrm:
-	docker network rm $(NETWORK) 
+	docker network rm $(NETWORK)
 conrm:
 	docker rm $(ID)
-
-

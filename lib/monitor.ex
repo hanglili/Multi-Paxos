@@ -1,3 +1,4 @@
+# Hang Li Li (hl4716)
 
 # distributed algorithms, n.dulay 11 feb 19
 # coursework 2, paxos made moderately complex
@@ -73,9 +74,17 @@ defp next config, clock, requests, updates, transactions, scouts, commanders do
 
     if config.debug_level == 1 do
       min_done = updates |> Map.values |> Enum.min
-      # n_requests = requests |> Map.values |> Enum.sum
-      # n_requests = div(n_requests, div(config.n_servers + 1, 2))
-      n_requests = requests |> Map.values |> Enum.max
+      n_requests =
+        if config.client_send == :broadcast do
+          requests |> Map.values |> Enum.max
+        else
+          if config.client_send == :quorum do
+            n_requests = requests |> Map.values |> Enum.sum
+            div(n_requests, div(config.n_servers + 1, 2))
+          else
+            requests |> Map.values |> Enum.sum
+          end
+        end
       IO.puts "time = #{clock}    total seen = #{n_requests} max lag = #{n_requests-min_done}"
       # IO.puts "#{clock}, #{n_requests}, #{n_requests-min_done}"
 

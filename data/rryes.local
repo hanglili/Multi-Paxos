@@ -1,4 +1,4 @@
-mix run --no-halt -e Multipaxos.main default single 3 2 
+mix run --no-halt -e Multipaxos.main default single 3 2
 Compiling 12 files (.ex)
 Generated multipaxos app
           Starting server 1 at 146.169.216.76

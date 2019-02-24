@@ -28,24 +28,27 @@ defmodule Leader do
           next(acceptors, replicas, ballot_num, active, proposals, config, timeout)
         end
 
-      {:adopted, ballot_num, pvalues} ->
-        proposals = update_proposals(proposals, pmax(pvalues))
-        for {s, c} <- proposals do
-          spawn(Commander, :start, [self(), acceptors, replicas,
-               {ballot_num, s, c}, config])
-          send(config.monitor, {:commander_spawned, config.server_num})
+      {:adopted, received_ballot_num, pvalues} ->
+        if received_ballot_num == ballot_num do
+          proposals = update_proposals(proposals, pmax(pvalues))
+          for {s, c} <- proposals do
+            spawn(Commander, :start, [self(), acceptors, replicas,
+                 {ballot_num, s, c}, config])
+            send(config.monitor, {:commander_spawned, config.server_num})
+          end
+          timeout = timeout - div(:rand.uniform(timeout), 2)
+          next(acceptors, replicas, ballot_num, true, proposals, config, timeout)
+        else
+          next(acceptors, replicas, ballot_num, active, proposals, config, timeout)
         end
-        # timeout = timeout - div(:rand.uniform(timeout), 2)
-        next(acceptors, replicas, ballot_num, true, proposals, config, timeout)
 
       {:preempted, {round_num, _} = msg_ballot_num} ->
-        # if msg_ballot_num == ballot_num do IO.puts("Hello") end
         if msg_ballot_num > ballot_num do
           ballot_num = {round_num + 1, config.server_num}
 
           # Sleep to prevent livelock.
           timeout = timeout + :rand.uniform(timeout)
-          # IO.puts "Server #{config.server_num} goes to sleep for #{timeout}"
+          # timeout = timeout + Enum.random(1..timeout)
           Process.sleep(timeout)
           spawn(Scout, :start, [self(), acceptors, ballot_num, config])
           send(config.monitor, {:scout_spawned, config.server_num})
@@ -53,6 +56,10 @@ defmodule Leader do
         else
           next(acceptors, replicas, ballot_num, active, proposals, config, timeout)
         end
+
+      {:decrease_timeout} ->
+        timeout = timeout - div(:rand.uniform(timeout), 2)
+        next(acceptors, replicas, ballot_num, active, proposals, config, timeout)
     end
   end
 

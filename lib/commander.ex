@@ -21,6 +21,7 @@ defmodule Commander do
             end
 
             send(config.monitor, {:commander_finished, config.server_num})
+            send(leader, {:decrease_timeout})
             Process.exit(self(), "Finished its function")
           end
 

@@ -52,7 +52,6 @@ defmodule Replica do
   defp perform(state, {client, request_id, transaction} = command) do
     if !has_already_executed(state.slot_out, command, state.decisions) do
       send(state.database, {:execute, transaction})
-      # IO.puts "Hello #{inspect command}"
       send(client, {:reply, request_id, :completed})
     end
     state.slot_out + 1

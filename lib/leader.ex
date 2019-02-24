@@ -7,11 +7,11 @@ defmodule Leader do
         # Using the server_num as the leader id since that is unique to each leader.
         spawn(Scout, :start, [self(), acceptors, {0, config.server_num}, config])
         send(config.monitor, {:scout_spawned, config.server_num})
-        next(acceptors, replicas, {0, config.server_num}, false, Map.new(), config)
+        next(acceptors, replicas, {0, config.server_num}, false, Map.new(), config, 1)
     end
   end
 
-  defp next(acceptors, replicas, ballot_num, active, proposals, config) do
+  defp next(acceptors, replicas, ballot_num, active, proposals, config, timeout) do
     receive do
       {:propose, slot, command} ->
         if not Map.has_key?(proposals, slot) do
@@ -23,9 +23,9 @@ defmodule Leader do
             send(config.monitor, {:commander_spawned, config.server_num})
           end
 
-          next(acceptors, replicas, ballot_num, active, proposals, config)
+          next(acceptors, replicas, ballot_num, active, proposals, config, timeout)
         else
-          next(acceptors, replicas, ballot_num, active, proposals, config)
+          next(acceptors, replicas, ballot_num, active, proposals, config, timeout)
         end
 
       {:adopted, ballot_num, pvalues} ->
@@ -35,21 +35,23 @@ defmodule Leader do
                {ballot_num, s, c}, config])
           send(config.monitor, {:commander_spawned, config.server_num})
         end
-        next(acceptors, replicas, ballot_num, true, proposals, config)
+        # timeout = timeout - div(:rand.uniform(timeout), 2)
+        next(acceptors, replicas, ballot_num, true, proposals, config, timeout)
 
       {:preempted, {round_num, _} = msg_ballot_num} ->
+        # if msg_ballot_num == ballot_num do IO.puts("Hello") end
         if msg_ballot_num > ballot_num do
           ballot_num = {round_num + 1, config.server_num}
+
           # Sleep to prevent livelock.
-          Process.sleep(:rand.uniform(10) * 100)
-          # Process.sleep(:rand.uniform(5000))
-          # Process.sleep(Enum.random(500..1000))
-          # Process.sleep(:rand.uniform(1000))
+          timeout = timeout + :rand.uniform(timeout)
+          # IO.puts "Server #{config.server_num} goes to sleep for #{timeout}"
+          Process.sleep(timeout)
           spawn(Scout, :start, [self(), acceptors, ballot_num, config])
           send(config.monitor, {:scout_spawned, config.server_num})
-          next(acceptors, replicas, ballot_num, false, proposals, config)
+          next(acceptors, replicas, ballot_num, false, proposals, config, timeout)
         else
-          next(acceptors, replicas, ballot_num, active, proposals, config)
+          next(acceptors, replicas, ballot_num, active, proposals, config, timeout)
         end
     end
   end

@@ -86,7 +86,6 @@ defp next config, clock, requests, updates, transactions, scouts, commanders do
           end
         end
       IO.puts "time = #{clock}    total seen = #{n_requests} max lag = #{n_requests-min_done}"
-      # IO.puts "#{clock}, #{n_requests}, #{n_requests-min_done}"
 
       sorted = scouts |> Map.to_list |> List.keysort(0)
       IO.puts "time = #{clock}        scouts = #{inspect sorted}"

@@ -48,7 +48,6 @@ defmodule Leader do
 
           # Sleep to prevent livelock.
           timeout = timeout + :rand.uniform(timeout)
-          # timeout = timeout + Enum.random(1..timeout)
           Process.sleep(timeout)
           spawn(Scout, :start, [self(), acceptors, ballot_num, config])
           send(config.monitor, {:scout_spawned, config.server_num})
